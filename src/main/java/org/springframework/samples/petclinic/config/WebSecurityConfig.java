@@ -6,12 +6,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 import javax.sql.DataSource;
@@ -20,41 +16,30 @@ import javax.sql.DataSource;
 @EnableWebSecurity
 public class WebSecurityConfig {
 
-	@Autowired
-	private DataSource dataSource;
+	@Bean
+	public static PasswordEncoder passwordEncoder() {
+		return new BCryptPasswordEncoder();
+	}
 
 	@Bean
 	public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-		http
+		http.csrf().disable()
 			.authorizeHttpRequests((requests) -> requests
-				.requestMatchers("/","/resources/**").permitAll()
+				.requestMatchers("/").permitAll()
+				.requestMatchers("/account/**").permitAll()
+				.requestMatchers("/resources/**").permitAll()
+				.requestMatchers("/user/**").hasAnyRole("USER")
+				.requestMatchers("/admin/**").hasAnyRole("ADMIN")
 				.anyRequest().authenticated()
 			)
 			.formLogin((form) -> form
 				.loginPage("/account/login")
+				.loginProcessingUrl("/account/login")
+				.defaultSuccessUrl("/")
 				.permitAll()
 			)
-			.logout((logout) -> logout.permitAll());
-
+			.logout((logout) -> logout.permitAll())
+			.exceptionHandling().accessDeniedPage("/access-denied");
 		return http.build();
-	}
-
-	@Autowired
-	public void configureGlobal(AuthenticationManagerBuilder auth)
-		throws Exception {
-		auth.jdbcAuthentication()
-			.dataSource(dataSource)
-			.passwordEncoder(passwordEncoder())
-			.usersByUsernameQuery("select username, password, enabled "
-				+ "from user "
-				+ "where username = ?")
-			.authoritiesByUsernameQuery("select username, name "
-				+ "from user_role ur inner join user u on ur.user_id = u.id "
-				+ "inner join role r on ur.role_id = r.id "
-				+ "where email = ?");
-	}
-
-	public PasswordEncoder passwordEncoder() {
-		return new BCryptPasswordEncoder();
 	}
 }
