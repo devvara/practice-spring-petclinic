@@ -10,11 +10,11 @@ import lombok.ToString;
 @Setter
 @ToString
 @Table(name="product")
-public class Product {
+public class Product extends BaseEntity {
 
 	@Id
-	@Column(name="item_id")
-	@GeneratedValue(strategy = GenerationType.AUTO)
+	@Column(name="product_id")
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
 	@Column(nullable = false, length = 50)
@@ -24,16 +24,15 @@ public class Product {
 	private String productSku;
 
 	@Column(nullable = false)
-	private int price;
+	private Integer price;
 
 	@Column(nullable = false)
-	private int stockQty;
+	private Integer stockQty;
 
 	@Lob
 	@Column(nullable = false)
 	private String productDesc;
 
 	@Column(nullable = false)
-	private int status;
-
+	private Integer status;
 }
